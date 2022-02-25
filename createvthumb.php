@@ -90,6 +90,8 @@ if (file_exists($thumbname)) // If thumbnail exists, serve it.
 	echo ($cacheContent);
 	exit;
 }
+$tmpfile = 'thumbs/tmp-' . sanitize($get_filename) . '.jpg';
+
 
 // Display error image if file isn't found
 if (!is_file($get_filename)) {
@@ -110,12 +112,23 @@ if (!is_readable($get_filename)) {
 }
 
 // otherwise, generate thumbnail, send it and save it to file.
+$cmd = 'ffmpeg -i '.escapeshellarg($get_filename).' -ss 00:00:01.000 -vframes 1 '.escapeshellarg($tmpfile);
+if (exec($cmd,$output,$rc) === false) {
+  header('Content-type: image/png');
+  readfile('images/filetype_VIDEO.png');
+  exit;
+}
+if ($rc != 0 || !is_file($tmpfile)) {
+  header('Content-type: image/png');
+  readfile('images/filetype_VIDEO.png');
+  exit;
+}
 
 $target = "";
 $xoord = 0;
 $yoord = 0;
 
-$imgsize = getimagesize($get_filename);
+$imgsize = getimagesize($tmpfile);
 $width = $imgsize[0];
 $height = $imgsize[1];
 // If the width is greater than the height it’s a horizontal picture
@@ -134,7 +147,7 @@ if ($width > $height) {
 
 $degrees = 0;
 $flip = '';
-if (preg_match("/.jpg$|.jpeg$/i", $_GET['filename'])) {
+if (preg_match("/.jpg$|.jpeg$/i", $tmpfile)) {
 	if (function_exists('exif_read_data') && function_exists('imagerotate')) {
 		$exif = exif_read_data($_GET['filename'], 0, true);
 		$ort = $exif['IFD0']['Orientation'];
@@ -168,27 +181,11 @@ if (preg_match("/.jpg$|.jpeg$/i", $_GET['filename'])) {
 }
 
 $target = imagecreatetruecolor($get_size, $get_size);
-
-// if the picture can be transparent, add a white background
-if (in_array($get_filename_type, array("GIF", "PNG"))) {
-	$backgroundColor = imagecolorallocate($target, 255, 255, 255);
-	imagefill($target, 0, 0, $backgroundColor);
-}
-
-if ($get_filename_type == "JPG") {
-	$source = imagecreatefromjpeg($get_filename);
-}
-
-if ($get_filename_type == "GIF") {
-	$source = imagecreatefromgif($get_filename);
-}
-
-if ($get_filename_type == "PNG") {
-	$source = imagecreatefrompng($get_filename);
-}
+$source = imagecreatefromjpeg($tmpfile);
 
 imagecopyresampled($target, $source, 0, 0, $xoord, $yoord, $get_size, $get_size, $width, $height);
 imagedestroy($source);
+unlink($tmpfile);
 
 //proper rotation by jan niggemann
 if ($degrees != 0) {

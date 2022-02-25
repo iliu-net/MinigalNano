@@ -122,8 +122,7 @@ function readEXIF($file) {
 	if (count($exif_arr) > 0) {
 		return "::" . implode(" | ", $exif_arr);
 	}
-
-	return $exif_arr;
+	return '';
 }
 
 function checkpermissions($file) {
@@ -186,9 +185,19 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 	while (false !== ($file = readdir($handle)) && !in_array($file, $skip_objects)) {
 		// 2. LOAD FOLDERS
 		if (is_dir($current_dir . "/" . $file)) {
+			if ($file == '.comments') continue;
 			if ($file != "." && $file != "..") {
 				checkpermissions($current_dir . "/" . $file); // Check for correct file permission
 				// Set thumbnail to folder.jpg if found:
+				$folder_title = $file;
+				if (file_exists($current_dir . '/' . $file . '/pics.ini')) {
+				  $ini = parse_ini_file($current_dir . '/' . $file . '/pics.ini');
+				  if (isset($ini['title_es'])) {
+				    $folder_title = $ini['title_es'];
+				  } elseif  (isset($ini['title_en'])) {
+				    $folder_title = $ini['title_en'];
+				  }
+				}
 				if (file_exists($current_dir . '/' . $file . '/folder.jpg')) {
 					$linkParams = http_build_query(
 						array('dir' => ltrim("$requestedDir/$file", '/')),
@@ -210,7 +219,7 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 					$dirs[] = array(
 						"name" => $file,
 						"date" => filemtime($current_dir . "/" . $file . "/folder.jpg"),
-						"html" => "<li><a href=\"{$linkUrl}\"><em>" . padstring($file, $label_max_length) . "</em><span></span><img src=\"{$imgUrl}\"  alt=\"$label_loading\" /></a></li>",
+						"html" => "<li><a href=\"{$linkUrl}\"><em>" . padstring($folder_title, $label_max_length) . "</em><span></span><img src=\"{$imgUrl}\"  alt=\"$label_loading\" /></a></li>",
 					);
 				} else {
 					// Set thumbnail to first image found (if any):
@@ -238,7 +247,7 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 						$dirs[] = array(
 							"name" => $file,
 							"date" => filemtime($current_dir . "/" . $file),
-							"html" => "<li><a href=\"{$linkUrl}\"><em>" . padstring($file, $label_max_length) . "</em><span></span><img src=\"{$imgUrl}\"  alt='$label_loading' /></a></li>",
+							"html" => "<li><a href=\"{$linkUrl}\"><em>" . padstring($folder_title, $label_max_length) . "</em><span></span><img src=\"{$imgUrl}\"  alt='$label_loading' /></a></li>",
 						);
 					} else {
 						// If no folder.jpg or image is found, then display default icon:
@@ -253,7 +262,7 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 						$dirs[] = array(
 							"name" => $file,
 							"date" => filemtime($current_dir . "/" . $file),
-							"html" => "<li><a href=\"{$linkUrl}\"><em>" . padstring($file, $label_max_length) . "</em><span></span><img src=\"{$imgUrl}\" width='$thumb_size' height='$thumb_size' alt='$label_loading' /></a></li>",
+							"html" => "<li><a href=\"{$linkUrl}\"><em>" . padstring($folder_title, $label_max_length) . "</em><span></span><img src=\"{$imgUrl}\" width='$thumb_size' height='$thumb_size' alt='$label_loading' /></a></li>",
 						);
 					}
 				}
@@ -269,16 +278,28 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 			}
 
 			// JPG, GIF and PNG
-			if (preg_match("/.jpg$|.gif$|.png$/i", $file)) {
+			if (preg_match("/.je?pg$|.gif$|.png$/i", $file)) {
 				//Read EXIF
 				if (!array_key_exists($file, $img_captions)) {
+					$ts = date('Y-m-d',filemtime($current_dir . "/" . $file));
+					$fs = filesize($current_dir . "/" . $file);
+					if ($fs >= 1<<30) {
+					  $fs = number_format($fs/(1<<30)).'GB';
+					} elseif ($fs >= 1<<20) {
+					  $fs = number_format($fs/(1<<20)).'MB';
+					} elseif ($fs >= 1<<10) {
+					  $fs = number_format($fs/(1<<10)).'KB';
+					} else {
+					  $fs = number_format($fs);
+					}
+
 					if ($display_exif == 1) {
 						$exifReaden = readEXIF($current_dir . "/" . $file);
 						//Add to the caption all the EXIF information
-						$img_captions[$file] = $file . $exifReaden;
+						$img_captions[$file] = $file . $exifReaden . " ($fs, $ts)";
 					} else {
 						//If no EXIF, just use the filename as caption
-						$img_captions[$file] = $file;
+						$img_captions[$file] = $file . '::'."($fs, $ts)";
 					}
 				}
 				// Read the optionnal image title and caption in html file (image.jpg --> image.jpg.html)
@@ -308,7 +329,31 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 					"date" => filemtime($current_dir . "/" . $file),
 					"size" => filesize($current_dir . "/" . $file),
 					"html" => "<li><a href=\"{$linkUrl}\" rel='lightbox[billeder]' title=\"" . htmlentities($img_captions[$file]) . "\"><img $imgopts alt='$label_loading' /></a>" . $filename_caption . "</li>");
+				continue;
 			}
+			// video files
+			if (preg_match("/\.ogv$|\.mp4$|\.mpg$|\.mpeg$|\.mov$|\.avi$|\.wmv$|\.flv$|\.webm$/i", $file)) {
+
+				$linkUrl = str_replace('%2F', '/', rawurlencode("$current_dir/$file"));
+				$imgParams = http_build_query(
+					array('filename' => "$thumbdir/$file", 'size' => $thumb_size),
+					'',
+					'&amp;');
+				$imgUrl = GALLERY_ROOT . "createvthumb.php?$imgParams";
+				if ($lazyload) {
+					$imgopts = "class=\"b-lazy\" src='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==' data-src=\"$imgUrl\"";
+				} else {
+					$imgopts = "src=\"{$imgUrl}\"";
+				}
+
+				$files[] = array(
+					"name" => $file,
+					"date" => filemtime($current_dir . "/" . $file),
+					"size" => filesize($current_dir . "/" . $file),
+					"html" => "<li><a href='$current_dir/$file' title='$file' rel='lightbox[billeder]'><img $imgopts alt='$label_loading' /></a>" . $filename_caption . "</li>");
+				continue;
+			}
+
 			// Other filetypes
 			$extension = "";
 			if (preg_match("/\.pdf$/i", $file)) {
@@ -343,10 +388,6 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 				$extension = "XLXS";
 			}
 			// Excel
-			if (preg_match("/\.ogv$|\.mp4$|\.mpg$|\.mpeg$|\.mov$|\.avi$|\.wmv$|\.flv$|\.webm$/i", $file)) {
-				$extension = "VIDEO";
-			}
-			// video files
 			if (preg_match("/\.aiff$|\.aif$|\.wma$|\.aac$|\.flac$|\.mp3$|\.ogg$|\.m4a$/i", $file)) {
 				$extension = "AUDIO";
 			}
@@ -519,6 +560,17 @@ if (file_exists($comment_filepath)) {
 	$comment = "<div class=\"Comment\">" . fread($fd, filesize($comment_filepath)) . "</div>";
 	fclose($fd);
 }
+$pics_filepath = $current_dir . $file . "/pics.ini";
+if (file_exists($pics_filepath)) {
+  $comment='<div class="Comment">';
+  $comment.='<table>';
+  foreach (parse_ini_file($pics_filepath) as $k=>$v) {
+    $comment.='<tr><td>'.$k.'</td><td>'.$v.'</td></tr>';
+  }
+  $comment .= '</table>';
+  $comment .= '</div>';
+}
+
 
 //PROCESS TEMPLATE FILE
 if (GALLERY_ROOT != "") {
@@ -548,3 +600,4 @@ if (!$fd = fopen($templatefile, "r")) {
 	$template = preg_replace("/<% version %>/", "$version", $template);
 	echo "$template";
 }
+
