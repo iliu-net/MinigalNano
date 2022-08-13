@@ -354,52 +354,56 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 				continue;
 			}
 
-			// Other filetypes
-			$extension = "";
-			if (preg_match("/\.pdf$/i", $file)) {
-				$extension = "PDF";
-			}
-			// PDF
-			if (preg_match("/\.zip$/i", $file)) {
-				$extension = "ZIP";
-			}
-			// ZIP archive
-			if (preg_match("/\.rar$|\.r[0-9]{2,}/i", $file)) {
-				$extension = "RAR";
-			}
-			// RAR Archive
-			if (preg_match("/\.tar$/i", $file)) {
-				$extension = "TAR";
-			}
-			// TARball archive
-			if (preg_match("/\.gz$/i", $file)) {
-				$extension = "GZ";
-			}
-			// GZip archive
-			if (preg_match("/\.doc$|\.docx$/i", $file)) {
-				$extension = "DOCX";
-			}
-			// Word
-			if (preg_match("/\.ppt$|\.pptx$/i", $file)) {
-				$extension = "PPTX";
-			}
-			//Powerpoint
-			if (preg_match("/\.xls$|\.xlsx$/i", $file)) {
-				$extension = "XLXS";
-			}
-			// Excel
-			if (preg_match("/\.aiff$|\.aif$|\.wma$|\.aac$|\.flac$|\.mp3$|\.ogg$|\.m4a$/i", $file)) {
-				$extension = "AUDIO";
-			}
-			// audio files
+			// Removed all this as doesn't seem to do anything
+			// useful, and causes problems if those types of
+			// files are found!
 
-			if ($extension != "") {
-				$files[] = array(
-					"name" => $file,
-					"date" => filemtime($current_dir . "/" . $file),
-					"size" => filesize($current_dir . "/" . $file),
-					"html" => "<li><a href='$current_dir/$file' title='$file'><em-pdf>" . padstring($file, 20) . "</em-pdf><span></span><img src='" . GALLERY_ROOT . "images/filetype_" . $extension . ".png' width='$thumb_size' height='$thumb_size' alt='$file' /></a>$filename_caption</li>");
-			}
+			//~ // Other filetypes
+			//~ $extension = "";
+			//~ if (preg_match("/\.pdf$/i", $file)) {
+				//~ $extension = "PDF";
+			//~ }
+			//~ // PDF
+			//~ if (preg_match("/\.zip$/i", $file)) {
+				//~ $extension = "ZIP";
+			//~ }
+			//~ // ZIP archive
+			//~ if (preg_match("/\.rar$|\.r[0-9]{2,}/i", $file)) {
+				//~ $extension = "RAR";
+			//~ }
+			//~ // RAR Archive
+			//~ if (preg_match("/\.tar$/i", $file)) {
+				//~ $extension = "TAR";
+			//~ }
+			//~ // TARball archive
+			//~ if (preg_match("/\.gz$/i", $file)) {
+				//~ $extension = "GZ";
+			//~ }
+			//~ // GZip archive
+			//~ if (preg_match("/\.doc$|\.docx$/i", $file)) {
+				//~ $extension = "DOCX";
+			//~ }
+			//~ // Word
+			//~ if (preg_match("/\.ppt$|\.pptx$/i", $file)) {
+				//~ $extension = "PPTX";
+			//~ }
+			//~ //Powerpoint
+			//~ if (preg_match("/\.xls$|\.xlsx$/i", $file)) {
+				//~ $extension = "XLXS";
+			//~ }
+			//~ // Excel
+			//~ if (preg_match("/\.aiff$|\.aif$|\.wma$|\.aac$|\.flac$|\.mp3$|\.ogg$|\.m4a$/i", $file)) {
+				//~ $extension = "AUDIO";
+			//~ }
+			//~ // audio files
+
+			//~ if ($extension != "") {
+				//~ $files[] = array(
+					//~ "name" => $file,
+					//~ "date" => filemtime($current_dir . "/" . $file),
+					//~ "size" => filesize($current_dir . "/" . $file),
+					//~ "html" => "<li><a href='$current_dir/$file' title='$file'><em-pdf>" . padstring($file, 20) . "</em-pdf><span></span><img src='" . GALLERY_ROOT . "images/filetype_" . $extension . ".png' width='$thumb_size' height='$thumb_size' alt='$file' /></a>$filename_caption</li>");
+			//~ }
 		}
 	}
 	closedir($handle);
