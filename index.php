@@ -354,56 +354,52 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 				continue;
 			}
 
-			// Removed all this as doesn't seem to do anything
-			// useful, and causes problems if those types of
-			// files are found!
+			// Other filetypes
+			$extension = "";
+			if (preg_match("/\.pdf$/i", $file)) {
+				$extension = "PDF";
+			}
+			// PDF
+			if (preg_match("/\.zip$/i", $file)) {
+				$extension = "ZIP";
+			}
+			// ZIP archive
+			if (preg_match("/\.rar$|\.r[0-9]{2,}/i", $file)) {
+				$extension = "RAR";
+			}
+			// RAR Archive
+			if (preg_match("/\.tar$/i", $file)) {
+				$extension = "TAR";
+			}
+			// TARball archive
+			if (preg_match("/\.gz$/i", $file)) {
+				$extension = "GZ";
+			}
+			// GZip archive
+			if (preg_match("/\.doc$|\.docx$/i", $file)) {
+				$extension = "DOCX";
+			}
+			// Word
+			if (preg_match("/\.ppt$|\.pptx$/i", $file)) {
+				$extension = "PPTX";
+			}
+			//Powerpoint
+			if (preg_match("/\.xls$|\.xlsx$/i", $file)) {
+				$extension = "XLXS";
+			}
+			// Excel
+			if (preg_match("/\.aiff$|\.aif$|\.wma$|\.aac$|\.flac$|\.mp3$|\.ogg$|\.m4a$/i", $file)) {
+				$extension = "AUDIO";
+			}
+			// audio files
 
-			//~ // Other filetypes
-			//~ $extension = "";
-			//~ if (preg_match("/\.pdf$/i", $file)) {
-				//~ $extension = "PDF";
-			//~ }
-			//~ // PDF
-			//~ if (preg_match("/\.zip$/i", $file)) {
-				//~ $extension = "ZIP";
-			//~ }
-			//~ // ZIP archive
-			//~ if (preg_match("/\.rar$|\.r[0-9]{2,}/i", $file)) {
-				//~ $extension = "RAR";
-			//~ }
-			//~ // RAR Archive
-			//~ if (preg_match("/\.tar$/i", $file)) {
-				//~ $extension = "TAR";
-			//~ }
-			//~ // TARball archive
-			//~ if (preg_match("/\.gz$/i", $file)) {
-				//~ $extension = "GZ";
-			//~ }
-			//~ // GZip archive
-			//~ if (preg_match("/\.doc$|\.docx$/i", $file)) {
-				//~ $extension = "DOCX";
-			//~ }
-			//~ // Word
-			//~ if (preg_match("/\.ppt$|\.pptx$/i", $file)) {
-				//~ $extension = "PPTX";
-			//~ }
-			//~ //Powerpoint
-			//~ if (preg_match("/\.xls$|\.xlsx$/i", $file)) {
-				//~ $extension = "XLXS";
-			//~ }
-			//~ // Excel
-			//~ if (preg_match("/\.aiff$|\.aif$|\.wma$|\.aac$|\.flac$|\.mp3$|\.ogg$|\.m4a$/i", $file)) {
-				//~ $extension = "AUDIO";
-			//~ }
-			//~ // audio files
-
-			//~ if ($extension != "") {
-				//~ $files[] = array(
-					//~ "name" => $file,
-					//~ "date" => filemtime($current_dir . "/" . $file),
-					//~ "size" => filesize($current_dir . "/" . $file),
-					//~ "html" => "<li><a href='$current_dir/$file' title='$file'><em-pdf>" . padstring($file, 20) . "</em-pdf><span></span><img src='" . GALLERY_ROOT . "images/filetype_" . $extension . ".png' width='$thumb_size' height='$thumb_size' alt='$file' /></a>$filename_caption</li>");
-			//~ }
+			if ($extension != "") {
+				$files[] = array(
+					"name" => $file,
+					"date" => filemtime($current_dir . "/" . $file),
+					"size" => filesize($current_dir . "/" . $file),
+					"html" => "<li><a href='$current_dir/$file' title='$file'><em-pdf>" . padstring($file, 20) . "</em-pdf><span></span><img src='" . GALLERY_ROOT . "images/filetype_" . $extension . ".png' width='$thumb_size' height='$thumb_size' alt='$file' /></a>$filename_caption</li>");
+			}
 		}
 	}
 	closedir($handle);
@@ -415,28 +411,31 @@ if (is_dir($current_dir) && $handle = opendir($current_dir)) {
 // SORT FILES AND FOLDERS
 //-----------------------
 if (sizeof($dirs) > 0) {
-	foreach ($dirs as $key => $row) {
-		if ($row["name"] == "") {
-			unset($dirs[$key]); //Delete empty array entries
-			continue;
-		}
-		$name[$key] = strtolower($row['name']);
-		$date[$key] = strtolower($row['date']);
-	}
-	@array_multisort($$sorting_folders, $sortdir_folders, $name, $sortdir_folders, $dirs);
+  $name = []; $date = [];
+  foreach ($dirs as $key => $row) {
+    if ($row["name"] == "") {
+      unset($dirs[$key]); //Delete empty array entries
+      continue;
+    }
+    $name[$key] = strtolower($row['name']);
+    $date[$key] = strtolower($row['date']);
+  }
+  @array_multisort($$sorting_folders, $sortdir_folders, $name, $sortdir_folders, $dirs);
 }
 
 if (sizeof($files) > 0) {
-	foreach ($files as $key => $row) {
-		if ($row["name"] == "") {
-			unset($files[$key]); //Delete empty array entries
-			continue;
-		}
-		$name[$key] = strtolower($row['name']);
-		$date[$key] = strtolower($row['date']);
-		$size[$key] = strtolower($row['size']);
-	}
-	@array_multisort($$sorting_files, $sortdir_files, $name, SORT_ASC, $files);
+  $name = []; $date = []; $size = [];
+  unset($name,$date,$size);
+  foreach ($files as $key => $row) {
+    if ($row["name"] == "") {
+      unset($files[$key]);
+      continue;
+    }
+    $name[$key] = strtolower($row['name']);
+    $date[$key] = strtolower($row['date']);
+    $size[$key] = strtolower($row['size']);
+  }
+  @array_multisort($$sorting_files, $sortdir_files, $name, SORT_ASC, $files);
 }
 
 //-----------------------
@@ -604,4 +603,5 @@ if (!$fd = fopen($templatefile, "r")) {
 	$template = preg_replace("/<% version %>/", "$version", $template);
 	echo "$template";
 }
+
 
